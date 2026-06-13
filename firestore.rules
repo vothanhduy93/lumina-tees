@@ -1,0 +1,20 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Default Deny
+    match /{document=**} { 
+      allow read, write: if false; 
+    }
+
+    match /products/{productId} {
+      // Products can be read by anyone directly, but only modified via the backend (server.ts / firebase-admin)
+      allow read: if true;
+      allow write: if false;
+    }
+
+    match /orders/{orderId} {
+      // Orders are handled strictly via the backend (server.ts / firebase-admin)
+      allow read, write: if false;
+    }
+  }
+}
