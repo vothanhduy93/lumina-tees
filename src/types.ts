@@ -13,6 +13,8 @@ export interface Product {
   image: string;
   description: string;
   sizes: Size[];
+  isNew?: boolean;
+  isBestseller?: boolean;
 }
 
 export interface CartItem {

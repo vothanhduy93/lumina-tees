@@ -29,7 +29,8 @@ const INITIAL_PRODUCTS = [
     status: "published",
     image: "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&q=80&w=800",
     description: "The perfect everyday tee. Crafted from 100% organic cotton for ultimate comfort and breathability.",
-    sizes: ["S", "M", "L", "XL"]
+    sizes: ["S", "M", "L", "XL"],
+    isBestseller: true
   },
   {
     id: "2",
@@ -53,7 +54,8 @@ const INITIAL_PRODUCTS = [
     status: "published",
     image: "https://images.unsplash.com/photo-1562157873-818bc0726f68?auto=format&fit=crop&q=80&w=800",
     description: "Pre-washed for a perfectly worn-in feel. Our heather gray tee features a super-soft tri-blend fabric.",
-    sizes: ["S", "M", "L", "XL"]
+    sizes: ["S", "M", "L", "XL"],
+    isNew: true
   },
   {
     id: "4",
@@ -89,7 +91,8 @@ const INITIAL_PRODUCTS = [
     status: "published",
     image: "https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?auto=format&fit=crop&q=80&w=800",
     description: "A subtle, artistic take on the basic tee. Features a minimalist line-art design on the back.",
-    sizes: ["S", "M", "L", "XL", "XXL"]
+    sizes: ["S", "M", "L", "XL", "XXL"],
+    isBestseller: true
   },
   {
     id: "7",
@@ -101,7 +104,8 @@ const INITIAL_PRODUCTS = [
     status: "published",
     image: "https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&q=80&w=800",
     description: "Cut from ultra-dense 300GSM organic cotton. Feature a dropped shoulder and structured unisex fit in beautiful dusty desert sage.",
-    sizes: ["S", "M", "L", "XL"]
+    sizes: ["S", "M", "L", "XL"],
+    isNew: true
   },
   {
     id: "8",

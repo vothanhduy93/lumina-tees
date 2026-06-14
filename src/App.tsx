@@ -26,6 +26,7 @@ function StoreLayout() {
   // Newsletter states
   const [newsletterEmail, setNewsletterEmail] = useState('');
   const [newsletterSuccess, setNewsletterSuccess] = useState(false);
+  const [newsletterError, setNewsletterError] = useState('');
   const [subscribedEmails, setSubscribedEmails] = useState<string[]>([]);
 
   useEffect(() => {
@@ -248,14 +249,34 @@ function StoreLayout() {
             <form 
               onSubmit={(e) => {
                 e.preventDefault();
-                if (newsletterEmail.trim()) {
-                  const updatedEmails = [...subscribedEmails, newsletterEmail.trim()];
-                  setSubscribedEmails(updatedEmails);
-                  console.log("Newsletter subscribers update in state:", updatedEmails);
-                  setNewsletterSuccess(true);
-                  setNewsletterEmail('');
-                  setTimeout(() => setNewsletterSuccess(false), 5000);
+                const trimmedEmail = newsletterEmail.trim();
+                const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+                
+                if (!trimmedEmail) {
+                  setNewsletterError("Email address is required.");
+                  setNewsletterSuccess(false);
+                  return;
                 }
+                
+                if (!emailRegex.test(trimmedEmail)) {
+                  setNewsletterError("Please enter a valid email address.");
+                  setNewsletterSuccess(false);
+                  return;
+                }
+                
+                if (subscribedEmails.includes(trimmedEmail)) {
+                  setNewsletterError("This email is already subscribed in this session.");
+                  setNewsletterSuccess(false);
+                  return;
+                }
+
+                setNewsletterError('');
+                const updatedEmails = [...subscribedEmails, trimmedEmail];
+                setSubscribedEmails(updatedEmails);
+                console.log("Newsletter subscribers update in state:", updatedEmails);
+                setNewsletterSuccess(true);
+                setNewsletterEmail('');
+                setTimeout(() => setNewsletterSuccess(false), 5000);
               }} 
               className="flex flex-col sm:flex-row gap-2 max-w-md md:ml-auto w-full"
             >
@@ -264,26 +285,45 @@ function StoreLayout() {
                 type="email"
                 placeholder="Enter your email address"
                 value={newsletterEmail}
-                onChange={(e) => setNewsletterEmail(e.target.value)}
+                onChange={(e) => {
+                  setNewsletterEmail(e.target.value);
+                  if (newsletterError) setNewsletterError('');
+                }}
                 className="flex-1 px-4 py-3 border border-slate-200 bg-white focus:border-slate-900 focus:ring-1 focus:ring-slate-900 outline-none text-sm transition-all"
                 aria-label="Newsletter email address"
+                id="newsletter-email-input"
               />
               <button
                 type="submit"
+                id="newsletter-subscribe-btn"
                 className="bg-slate-900 text-white px-6 py-3 text-xs font-bold uppercase tracking-widest hover:bg-slate-800 transition-colors cursor-pointer whitespace-nowrap font-semibold"
               >
                 Subscribe
               </button>
             </form>
-            <AnimatePresence>
+            <AnimatePresence mode="wait">
               {newsletterSuccess && (
                 <motion.p
+                  key="success"
                   initial={{ opacity: 0, y: -5 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0 }}
                   className="text-xs text-emerald-600 font-semibold mt-3 md:text-right"
+                  id="newsletter-success-msg"
                 >
                   Subscription successful! Welcome to Lumina Journal.
+                </motion.p>
+              )}
+              {newsletterError && (
+                <motion.p
+                  key="error"
+                  initial={{ opacity: 0, y: -5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0 }}
+                  className="text-xs text-rose-600 font-semibold mt-3 md:text-right"
+                  id="newsletter-error-msg"
+                >
+                  {newsletterError}
                 </motion.p>
               )}
             </AnimatePresence>
@@ -323,15 +363,30 @@ function StoreLayout() {
         {showScrollToTop && (
           <motion.button
             initial={{ opacity: 0, y: 15, scale: 0.9 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
+            animate={{ 
+              opacity: 1, 
+              y: 0,
+              scale: [1, 1.06, 1]
+            }}
             exit={{ opacity: 0, y: 15, scale: 0.9 }}
-            transition={{ duration: 0.2, ease: "easeOut" }}
+            transition={{ 
+              opacity: { duration: 0.2, ease: "easeOut" },
+              y: { duration: 0.2, ease: "easeOut" },
+              scale: {
+                repeat: Infinity,
+                duration: 2.2,
+                ease: "easeInOut"
+              }
+            }}
             onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
             className="fixed bottom-8 right-8 z-40 bg-white text-slate-900 border border-slate-250/80 p-3.5 rounded-full shadow-lg hover:shadow-xl hover:bg-slate-50 hover:border-slate-350 transition-all flex items-center justify-center group"
             title="Scroll back to top"
             aria-label="Scroll to top"
             id="scroll-to-top-button"
-            whileHover={{ scale: 1.05 }}
+            whileHover={{ 
+              scale: 1.15,
+              transition: { duration: 0.2, ease: "easeOut" }
+            }}
             whileTap={{ scale: 0.95 }}
           >
             <ArrowUp className="w-5 h-5 text-slate-700 group-hover:text-slate-900 group-hover:-translate-y-0.5 transition-transform" />

@@ -45,6 +45,26 @@ export function ProductCard({ product, onQuickView }: ProductCardProps) {
           className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
         />
 
+        {/* Badge overlays */}
+        <div className="absolute top-3 left-3 z-30 flex flex-col gap-1.5 items-start">
+          {product.isNew && (
+            <span 
+              className="bg-slate-900 text-white text-[9px] font-extrabold uppercase tracking-widest px-2.5 py-1 shadow-sm font-sans"
+              id={`badge-new-${product.id}`}
+            >
+              New
+            </span>
+          )}
+          {product.isBestseller && (
+            <span 
+              className="bg-amber-600 text-white text-[9px] font-extrabold uppercase tracking-widest px-2.5 py-1 shadow-sm font-sans"
+              id={`badge-bestseller-${product.id}`}
+            >
+              Bestseller
+            </span>
+          )}
+        </div>
+
         {/* Heart Wishlist Overlay Icon */}
         <button
           onClick={(e) => {
