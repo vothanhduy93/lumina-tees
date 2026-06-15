@@ -2,6 +2,7 @@ import React from 'react';
 import { ShoppingBag, X, Plus, Minus } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useCart } from '../context/CartContext';
+import { useCurrency } from '../context/CurrencyContext';
 
 interface CartDrawerProps {
   onCheckout: () => void;
@@ -9,6 +10,7 @@ interface CartDrawerProps {
 
 export function CartDrawer({ onCheckout }: CartDrawerProps) {
   const { items, isOpen, setIsOpen, updateQuantity, removeFromCart, subtotal } = useCart();
+  const { formatPrice } = useCurrency();
 
   return (
     <AnimatePresence>
@@ -91,7 +93,7 @@ export function CartDrawer({ onCheckout }: CartDrawerProps) {
                             </button>
                           </div>
                           <p className="font-bold text-sm text-slate-900">
-                            ${((parseFloat(item.price as any) || 0) * (item.quantity ?? 1)).toFixed(2)}
+                            {formatPrice((parseFloat(item.price as any) || 0) * (item.quantity ?? 1))}
                           </p>
                         </div>
                       </div>
@@ -105,7 +107,7 @@ export function CartDrawer({ onCheckout }: CartDrawerProps) {
               <div className="border-t border-slate-100 p-6 bg-slate-50">
                 <div className="flex justify-between items-center mb-6 text-sm">
                   <span className="text-slate-500 font-bold uppercase tracking-widest text-xs">Subtotal</span>
-                  <span className="text-lg font-bold">${(subtotal || 0).toFixed(2)}</span>
+                  <span className="text-lg font-bold">{formatPrice(subtotal || 0)}</span>
                 </div>
                 <button
                   onClick={() => {

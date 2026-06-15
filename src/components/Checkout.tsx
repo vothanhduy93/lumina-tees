@@ -1,14 +1,17 @@
 import React, { useState } from 'react';
 import { useCart } from '../context/CartContext';
+import { useCurrency } from '../context/CurrencyContext';
 import { motion } from 'motion/react';
 import { CheckCircle2, ArrowRight, ArrowLeft } from 'lucide-react';
 
 interface CheckoutProps {
   onBack: () => void;
+  onTrackOrder?: (orderId: string) => void;
 }
 
-export function Checkout({ onBack }: CheckoutProps) {
+export function Checkout({ onBack, onTrackOrder }: CheckoutProps) {
   const { items, subtotal, clearCart } = useCart();
+  const { formatPrice } = useCurrency();
   const [loading, setLoading] = useState(false);
   const [successData, setSuccessData] = useState<{ orderId: string } | null>(null);
 
@@ -73,12 +76,24 @@ export function Checkout({ onBack }: CheckoutProps) {
           <p className="text-sm font-bold uppercase tracking-widest text-slate-400 mb-2">Order Number</p>
           <p className="font-mono font-medium text-lg text-slate-900">{successData.orderId}</p>
         </div>
-        <button 
-          onClick={onBack}
-          className="inline-flex items-center gap-2 bg-slate-900 text-white px-8 py-4 text-sm font-bold uppercase tracking-widest hover:bg-slate-800 transition-colors"
-        >
-          Continue Shopping <ArrowRight className="w-4 h-4" />
-        </button>
+        <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+          {onTrackOrder && (
+            <button 
+              onClick={() => onTrackOrder(successData.orderId)}
+              id="checkout-success-track-btn"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-slate-900 text-white px-8 py-4 text-xs font-bold uppercase tracking-widest hover:bg-slate-800 transition-colors cursor-pointer"
+            >
+              Track Delivery Progress <ArrowRight className="w-4 h-4" />
+            </button>
+          )}
+          <button 
+            onClick={onBack}
+            id="checkout-success-continue-btn"
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-white text-slate-900 border border-slate-200 px-8 py-4 text-xs font-bold uppercase tracking-widest hover:bg-slate-50 transition-colors cursor-pointer"
+          >
+            Continue Shopping
+          </button>
+        </div>
       </motion.div>
     );
   }
@@ -157,7 +172,7 @@ export function Checkout({ onBack }: CheckoutProps) {
                     <p className="text-xs text-slate-500 mt-0.5 mt-1">Size {item.size} × {item.quantity}</p>
                   </div>
                   <div className="font-bold text-sm text-slate-900 pt-1">
-                    ${((parseFloat(item.price as any) || 0) * (item.quantity ?? 1)).toFixed(2)}
+                    {formatPrice((parseFloat(item.price as any) || 0) * (item.quantity ?? 1))}
                   </div>
                 </div>
               ))}
@@ -166,22 +181,22 @@ export function Checkout({ onBack }: CheckoutProps) {
             <div className="border-t border-slate-200 pt-6 space-y-3 mb-6">
               <div className="flex justify-between text-sm text-slate-600">
                 <span>Subtotal</span>
-                <span>${(subtotal || 0).toFixed(2)}</span>
+                <span>{formatPrice(subtotal || 0)}</span>
               </div>
               <div className="flex justify-between text-sm text-slate-600">
                 <span>Estimated Tax (8%)</span>
-                <span>${(tax || 0).toFixed(2)}</span>
+                <span>{formatPrice(tax || 0)}</span>
               </div>
               <div className="flex justify-between text-sm text-slate-600">
                 <span>Shipping</span>
-                <span>{shipping === 0 ? 'Free' : `$${(shipping || 0).toFixed(2)}`}</span>
+                <span>{shipping === 0 ? 'Free' : formatPrice(shipping || 0)}</span>
               </div>
             </div>
 
             <div className="border-t border-slate-900 pt-6 mb-8">
               <div className="flex justify-between items-center p-4 border border-slate-200 bg-white">
                 <span className="font-medium text-slate-900">Total</span>
-                <span className="text-xl font-bold text-slate-900">${(total || 0).toFixed(2)}</span>
+                <span className="text-xl font-bold text-slate-900">{formatPrice(total || 0)}</span>
               </div>
             </div>
 

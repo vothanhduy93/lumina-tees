@@ -2,21 +2,32 @@ import React, { useState, useEffect } from 'react';
 import { Product } from './types';
 import { CartProvider } from './context/CartContext';
 import { WishlistProvider } from './context/WishlistContext';
+import { CompareProvider } from './context/CompareContext';
+import { CurrencyProvider } from './context/CurrencyContext';
 import { Navbar } from './components/Navbar';
 import { ProductCard } from './components/ProductCard';
 import { QuickViewModal } from './components/QuickViewModal';
 import { Testimonials } from './components/Testimonials';
+import { FAQ } from './components/FAQ';
+import { OrderStatus } from './components/OrderStatus';
+import { CompareTray } from './components/CompareTray';
+import { CompareModal } from './components/CompareModal';
 import { CartDrawer } from './components/CartDrawer';
 import { Checkout } from './components/Checkout';
 import { SavedView } from './components/SavedView';
 import { Admin } from './components/Admin';
+import { ProfileView } from './components/ProfileView';
+import { PromoBanner } from './components/PromoBanner';
 import { motion, AnimatePresence } from 'motion/react';
-import { ChevronDown, ArrowUp } from 'lucide-react';
+import { ChevronDown, ChevronUp, Instagram, Twitter, Pin } from 'lucide-react';
+import { Helmet } from 'react-helmet-async';
 
 function StoreLayout() {
-  const [view, setView] = useState<'home' | 'checkout' | 'admin' | 'saved'>('home');
+  const [view, setView] = useState<'home' | 'checkout' | 'admin' | 'saved' | 'track' | 'profile'>('home');
+  const [selectedTrackingOrderId, setSelectedTrackingOrderId] = useState<string>('');
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isCompareOpen, setIsCompareOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<'newest' | 'price-asc' | 'price-desc'>('newest');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
@@ -89,7 +100,49 @@ function StoreLayout() {
 
   return (
     <div className="min-h-screen flex flex-col font-sans">
-      <Navbar onNavigate={setView} searchQuery={searchQuery} onSearchChange={setSearchQuery} activeView={view} />
+      <Helmet>
+        {view === 'home' && (
+          <>
+            <title>Lumina Tees | Elevated Everyday Essentials & Sustainable Organic T-Shirts</title>
+            <meta name="description" content="Discover Lumina Tees, a premium collection of sustainably sourced, 100% organic cotton t-shirts built for lasting comfort and elevated modern design." />
+            <meta name="keywords" content="organic cotton, premium t-shirts, sustainable apparel, minimal design, elevated essentials, Lumina Tees" />
+            <meta property="og:title" content="Lumina Tees | Elevated Everyday Essentials" />
+            <meta property="og:description" content="Sustainably sourced, 100% organic cotton t-shirts built for comfort and longevity." />
+            <meta property="og:type" content="website" />
+          </>
+        )}
+        {view === 'checkout' && (
+          <>
+            <title>Secure Checkout | Lumina Tees</title>
+            <meta name="description" content="Complete your premium sustainable fashion order securely and smoothly." />
+          </>
+        )}
+        {view === 'saved' && (
+          <>
+            <title>My Saved Collection | Lumina Tees</title>
+            <meta name="description" content="Your curated collection of premium organic tees from Lumina Tees." />
+          </>
+        )}
+        {view === 'track' && (
+          <>
+            <title>Track Order Delivery Progress | Lumina Tees</title>
+            <meta name="description" content="Track your premium organic tees transit journey and ecological package delivery status." />
+          </>
+        )}
+      </Helmet>
+
+      <PromoBanner />
+      <Navbar 
+        onNavigate={setView} 
+        searchQuery={searchQuery} 
+        onSearchChange={setSearchQuery} 
+        activeView={view} 
+        products={products}
+        onSelectProduct={(p) => {
+          setQuickViewProduct(p);
+          setView('home');
+        }}
+      />
       <CartDrawer onCheckout={() => setView('checkout')} />
 
       <main className="flex-1">
@@ -176,16 +229,39 @@ function StoreLayout() {
                 </div>
                 
                 {loading ? (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-12">
-                    {[1, 2, 3, 4, 5, 6].map(i => (
-                      <div key={i} className="animate-pulse flex flex-col">
-                        <div className="bg-slate-100 aspect-[3/4] w-full mb-4"></div>
-                        <div className="flex justify-between items-start gap-4">
-                          <div className="flex-1">
-                            <div className="h-4 bg-slate-200 w-2/3 mb-2"></div>
-                            <div className="h-3 bg-slate-100 w-1/3"></div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-12" id="product-grid-loading-skeleton">
+                    {[1, 2, 3, 4, 5, 6].map((i) => (
+                      <div key={i} className="flex flex-col w-full">
+                        {/* Shimmer Image Wrapper */}
+                        <div className="relative aspect-[3/4] bg-slate-100 w-full mb-4 overflow-hidden rounded-xs border border-slate-100/50">
+                          {/* Sliding shimmer light background */}
+                          <div className="absolute inset-0 bg-skeleton-shimmer animate-shimmer" />
+                          
+                          {/* Mock top overlay badges */}
+                          <div className="absolute top-3 left-3 z-10 flex gap-1.5">
+                            <div className="w-12 h-5 bg-white/70 backdrop-blur-xs rounded-xs" />
                           </div>
-                          <div className="h-4 bg-slate-200 w-12 shrink-0"></div>
+                          
+                          {/* Mock top overlay wishlist button */}
+                          <div className="absolute top-3 right-3 z-10 w-9 h-9 rounded-full bg-white/70 backdrop-blur-xs" />
+                        </div>
+
+                        {/* Metas structure */}
+                        <div className="flex justify-between items-start gap-4">
+                          <div className="flex-1 min-w-0 flex flex-col gap-2">
+                            {/* Title mock */}
+                            <div className="relative h-4 bg-slate-200 w-4/5 overflow-hidden rounded-xs">
+                              <div className="absolute inset-0 bg-skeleton-shimmer animate-shimmer opacity-60" />
+                            </div>
+                            {/* Description mock */}
+                            <div className="relative h-3 bg-slate-150 w-3/5 overflow-hidden rounded-xs">
+                              <div className="absolute inset-0 bg-skeleton-shimmer animate-shimmer opacity-40" />
+                            </div>
+                          </div>
+                          {/* Price mock */}
+                          <div className="relative h-4 bg-slate-200 w-14 shrink-0 overflow-hidden rounded-xs">
+                            <div className="absolute inset-0 bg-skeleton-shimmer animate-shimmer opacity-60" />
+                          </div>
                         </div>
                       </div>
                     ))}
@@ -208,6 +284,9 @@ function StoreLayout() {
 
               {/* Customer Testimonials & Ratings Chart visualization */}
               <Testimonials />
+
+              {/* Frequently Asked Questions Accordion section */}
+              <FAQ />
             </motion.div>
           )}
 
@@ -218,7 +297,13 @@ function StoreLayout() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
             >
-              <Checkout onBack={() => setView('home')} />
+              <Checkout 
+                onBack={() => setView('home')} 
+                onTrackOrder={(orderId) => {
+                  setSelectedTrackingOrderId(orderId);
+                  setView('track');
+                }}
+              />
             </motion.div>
           )}
 
@@ -233,6 +318,40 @@ function StoreLayout() {
               <SavedView onBack={() => setView('home')} onQuickView={setQuickViewProduct} />
             </motion.div>
           )}
+
+          {view === 'track' && (
+            <motion.div
+              key="track"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="flex-1 flex flex-col"
+            >
+              <OrderStatus 
+                initialOrderId={selectedTrackingOrderId} 
+                onBack={() => {
+                  setView('home');
+                  setSelectedTrackingOrderId('');
+                }} 
+              />
+            </motion.div>
+          )}
+
+          {view === 'profile' && (
+            <motion.div
+              key="profile"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="flex-1 flex flex-col"
+            >
+              <ProfileView 
+                onBack={() => setView('home')} 
+                onQuickView={setQuickViewProduct} 
+              />
+            </motion.div>
+          )}
+
         </AnimatePresence>
       </main>
 
@@ -244,6 +363,46 @@ function StoreLayout() {
             <p className="text-sm text-slate-500 max-w-md">
               Receive standard drop notifications, curated design collections, sustainable material stories, and journal articles.
             </p>
+            
+            {/* Visual Social Links Section */}
+            <div className="mt-6 flex items-center gap-4" id="footer-social-links-container">
+              <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                Follow Lumina
+              </span>
+              <div className="h-[1px] w-6 bg-slate-200"></div>
+              <div className="flex gap-3">
+                <a 
+                  href="https://instagram.com" 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className="w-8 h-8 rounded-sm border border-slate-200 hover:border-slate-950 hover:bg-slate-950 hover:text-white flex items-center justify-center text-slate-600 transition-all duration-300 cursor-pointer"
+                  title="Instagram"
+                  id="social-instagram-link"
+                >
+                  <Instagram className="w-3.5 h-3.5" />
+                </a>
+                <a 
+                  href="https://twitter.com" 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className="w-8 h-8 rounded-sm border border-slate-200 hover:border-slate-950 hover:bg-slate-950 hover:text-white flex items-center justify-center text-slate-600 transition-all duration-300 cursor-pointer"
+                  title="Twitter"
+                  id="social-twitter-link"
+                >
+                  <Twitter className="w-3.5 h-3.5" />
+                </a>
+                <a 
+                  href="https://pinterest.com" 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className="w-8 h-8 rounded-sm border border-slate-200 hover:border-slate-950 hover:bg-slate-950 hover:text-white flex items-center justify-center text-slate-600 transition-all duration-300 cursor-pointer"
+                  title="Pinterest"
+                  id="social-pinterest-link"
+                >
+                  <Pin className="w-3.5 h-3.5" />
+                </a>
+              </div>
+            </div>
           </div>
           <div className="flex flex-col justify-center">
             <form 
@@ -366,7 +525,7 @@ function StoreLayout() {
             animate={{ 
               opacity: 1, 
               y: 0,
-              scale: [1, 1.06, 1]
+              scale: [1, 1.05, 1]
             }}
             exit={{ opacity: 0, y: 15, scale: 0.9 }}
             transition={{ 
@@ -374,22 +533,22 @@ function StoreLayout() {
               y: { duration: 0.2, ease: "easeOut" },
               scale: {
                 repeat: Infinity,
-                duration: 2.2,
+                duration: 3.0,
                 ease: "easeInOut"
               }
             }}
             onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-            className="fixed bottom-8 right-8 z-40 bg-white text-slate-900 border border-slate-250/80 p-3.5 rounded-full shadow-lg hover:shadow-xl hover:bg-slate-50 hover:border-slate-350 transition-all flex items-center justify-center group"
+            className="fixed bottom-8 right-8 z-40 bg-slate-950 text-white border border-slate-800 p-3.5 rounded-full shadow-lg hover:shadow-xl hover:bg-slate-900 hover:border-slate-700 transition-all flex items-center justify-center group"
             title="Scroll back to top"
             aria-label="Scroll to top"
             id="scroll-to-top-button"
             whileHover={{ 
-              scale: 1.15,
-              transition: { duration: 0.2, ease: "easeOut" }
+              scale: 1.12,
+              transition: { duration: 0.15, ease: "easeOut" }
             }}
             whileTap={{ scale: 0.95 }}
           >
-            <ArrowUp className="w-5 h-5 text-slate-700 group-hover:text-slate-900 group-hover:-translate-y-0.5 transition-transform" />
+            <ChevronUp className="w-5 h-5 text-slate-300 group-hover:text-white group-hover:-translate-y-0.5 transition-transform stroke-[1.75]" />
           </motion.button>
         )}
       </AnimatePresence>
@@ -400,6 +559,20 @@ function StoreLayout() {
           <QuickViewModal 
             product={quickViewProduct} 
             onClose={() => setQuickViewProduct(null)} 
+            products={products}
+            onSelectProduct={setQuickViewProduct}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Dynamic Product Specification Comparison overlays */}
+      <CompareTray onOpenCompare={() => setIsCompareOpen(true)} />
+      <AnimatePresence>
+        {isCompareOpen && (
+          <CompareModal 
+            isOpen={isCompareOpen} 
+            onClose={() => setIsCompareOpen(false)}
+            onQuickView={(p) => setQuickViewProduct(p)}
           />
         )}
       </AnimatePresence>
@@ -409,11 +582,15 @@ function StoreLayout() {
 
 export default function App() {
   return (
-    <CartProvider>
-      <WishlistProvider>
-        <StoreLayout />
-      </WishlistProvider>
-    </CartProvider>
+    <CurrencyProvider>
+      <CartProvider>
+        <WishlistProvider>
+          <CompareProvider>
+            <StoreLayout />
+          </CompareProvider>
+        </WishlistProvider>
+      </CartProvider>
+    </CurrencyProvider>
   );
 }
 

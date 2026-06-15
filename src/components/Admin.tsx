@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Product, Order } from '../types';
+import { useCurrency } from '../context/CurrencyContext';
 import { Plus, Edit2, Trash2, Box, ShoppingCart, LayoutDashboard, ArrowLeft, Package, AlertCircle, Check, Clock, XCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
 export function Admin({ onBack }: { onBack: () => void }) {
+  const { formatPrice } = useCurrency();
   const [activeTab, setActiveTab] = useState<'dashboard' | 'products' | 'orders'>('dashboard');
   const [products, setProducts] = useState<Product[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
@@ -139,7 +141,7 @@ export function Admin({ onBack }: { onBack: () => void }) {
                   {/* Revenue Card */}
                   <div className="bg-white p-6 shadow-sm border border-slate-200 rounded-sm">
                     <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Net Sales</h3>
-                    <p className="text-3xl font-light text-slate-900 mt-2">${(analytics?.revenue ?? 0).toFixed(2)}</p>
+                    <p className="text-3xl font-light text-slate-900 mt-2">{formatPrice(analytics?.revenue ?? 0)}</p>
                     <p className="text-xs text-green-600 mt-2 flex items-center gap-1">+12% from last month</p>
                   </div>
                   {/* Orders Card */}
@@ -227,7 +229,7 @@ export function Admin({ onBack }: { onBack: () => void }) {
                               'N/A'
                             )}
                           </td>
-                          <td className="px-4 py-3 text-slate-900">${(typeof product.price === 'number' ? product.price : parseFloat(product.price as any) || 0).toFixed(2)}</td>
+                          <td className="px-4 py-3 text-slate-900">{formatPrice(typeof product.price === 'number' ? product.price : parseFloat(product.price as any) || 0)}</td>
                           <td className="px-4 py-3 text-slate-500">{product.category || 'Uncategorized'}</td>
                           <td className="px-4 py-3">
                             <span className={`px-2 py-1 text-[10px] font-medium uppercase tracking-wider rounded-sm ${getStatusColor(product.status || 'draft')}`}>
@@ -291,7 +293,7 @@ export function Admin({ onBack }: { onBack: () => void }) {
                               <option value="cancelled" className="bg-white text-slate-800">Cancelled</option>
                             </select>
                           </td>
-                          <td className="px-4 py-4 font-medium text-slate-900">${(typeof order.total === 'number' ? order.total : parseFloat(order.total as any) || 0).toFixed(2)}</td>
+                          <td className="px-4 py-4 font-medium text-slate-900">{formatPrice(typeof order.total === 'number' ? order.total : parseFloat(order.total as any) || 0)}</td>
                           <td className="px-4 py-4">
                              <button 
                                onClick={() => setSelectedOrder(order)}
@@ -420,8 +422,8 @@ export function Admin({ onBack }: { onBack: () => void }) {
                             <p className="text-xs text-slate-500 font-mono mt-1">Size {item.size} • Qty {item.quantity}</p>
                           </div>
                           <div className="text-right shrink-0">
-                            <p className="text-sm font-semibold text-slate-900">${((parseFloat(item.price as any) || 0) * (item.quantity ?? 1)).toFixed(2)}</p>
-                            <p className="text-[10px] text-slate-400 font-mono mt-0.5">${(parseFloat(item.price as any) || 0).toFixed(2)} each</p>
+                            <p className="text-sm font-semibold text-slate-900">{formatPrice((parseFloat(item.price as any) || 0) * (item.quantity ?? 1))}</p>
+                            <p className="text-[10px] text-slate-400 font-mono mt-0.5">{formatPrice(parseFloat(item.price as any) || 0)} each</p>
                           </div>
                         </div>
                       ))}
@@ -479,7 +481,7 @@ export function Admin({ onBack }: { onBack: () => void }) {
                     </div>
                     <div className="flex justify-between items-center py-2 px-3 bg-slate-900 text-white rounded-sm mt-2">
                       <span className="text-xs font-bold uppercase tracking-widest">Grand Total</span>
-                      <span className="font-mono font-bold text-base">${(typeof selectedOrder.total === 'number' ? selectedOrder.total : parseFloat(selectedOrder.total as any) || 0).toFixed(2)}</span>
+                      <span className="font-mono font-bold text-base">{formatPrice(typeof selectedOrder.total === 'number' ? selectedOrder.total : parseFloat(selectedOrder.total as any) || 0)}</span>
                     </div>
                   </div>
                 </div>

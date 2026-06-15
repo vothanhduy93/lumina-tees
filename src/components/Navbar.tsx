@@ -1,20 +1,77 @@
-import React, { useState } from 'react';
-import { ShoppingBag, Menu, Search, X, Loader2, ArrowRight, Package, XCircle, Heart } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { ShoppingBag, Menu, Search, X, Loader2, ArrowRight, Package, XCircle, Heart, User, Sparkles } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { useWishlist } from '../context/WishlistContext';
+import { useCurrency, CurrencyType } from '../context/CurrencyContext';
 import { motion, AnimatePresence } from 'motion/react';
+import { Product } from '../types';
 
 interface NavbarProps {
-  onNavigate: (view: 'home' | 'checkout' | 'admin' | 'saved') => void;
+  onNavigate: (view: 'home' | 'checkout' | 'admin' | 'saved' | 'track' | 'profile') => void;
   searchQuery: string;
   onSearchChange: (query: string) => void;
-  activeView?: 'home' | 'checkout' | 'admin' | 'saved';
+  activeView?: 'home' | 'checkout' | 'admin' | 'saved' | 'track' | 'profile';
+  products?: Product[];
+  onSelectProduct?: (product: Product) => void;
 }
 
-export function Navbar({ onNavigate, searchQuery, onSearchChange, activeView = 'home' }: NavbarProps) {
+const highlightMatch = (text: string, query: string) => {
+  if (!query) return <span>{text}</span>;
+  // Escape special regex characters in query to prevent crash
+  const escapedQuery = query.trim().replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+  const parts = text.split(new RegExp(`(${escapedQuery})`, 'gi'));
+  return (
+    <span>
+      {parts.map((part, i) => 
+        part.toLowerCase() === query.trim().toLowerCase() ? (
+          <mark key={i} className="bg-amber-100 text-slate-950 font-bold px-0.5 rounded-sm">
+            {part}
+          </mark>
+        ) : (
+          <span key={i}>{part}</span>
+        )
+      )}
+    </span>
+  );
+};
+
+
+export function Navbar({ 
+  onNavigate, 
+  searchQuery, 
+  onSearchChange, 
+  activeView = 'home',
+  products = [],
+  onSelectProduct
+}: NavbarProps) {
   const { totalItems, setIsOpen } = useCart();
   const { totalSaved } = useWishlist();
+  const { currency, setCurrency, formatPrice } = useCurrency();
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const searchContainerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (searchContainerRef.current && !searchContainerRef.current.contains(event.target as Node)) {
+        setShowSuggestions(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  const filteredSuggestions = (products || []).filter((p) => {
+    if (!searchQuery.trim()) return false;
+    const query = searchQuery.toLowerCase();
+    return (
+      p.name.toLowerCase().includes(query) ||
+      (p.description && p.description.toLowerCase().includes(query)) ||
+      (p.category && p.category.toLowerCase().includes(query))
+    );
+  }).slice(0, 5);
 
   // Tracking states
   const [isTrackOpen, setIsTrackOpen] = useState(false);
@@ -80,14 +137,33 @@ export function Navbar({ onNavigate, searchQuery, onSearchChange, activeView = '
                 <Heart className={`w-3.5 h-3.5 ${totalSaved > 0 ? 'fill-rose-500 text-rose-500' : ''}`} />
                 Saved ({totalSaved})
               </button>
-              <button onClick={() => setIsTrackOpen(true)} className="hover:text-slate-900 transition-all font-medium border-b border-transparent hover:border-slate-400 cursor-pointer">Track Order</button>
+              <button 
+                onClick={() => onNavigate('track')} 
+                className={`pb-0.5 border-b-2 transition-all cursor-pointer ${
+                  activeView === 'track' 
+                    ? 'text-slate-900 border-slate-900 font-bold' 
+                    : 'border-transparent text-slate-500 hover:text-slate-900'
+                }`}
+              >
+                Track Order
+              </button>
+              <button 
+                onClick={() => onNavigate('profile')} 
+                className={`pb-0.5 border-b-2 transition-all cursor-pointer ${
+                  activeView === 'profile' 
+                    ? 'text-slate-900 border-slate-900 font-bold' 
+                    : 'border-transparent text-slate-500 hover:text-slate-900'
+                }`}
+              >
+                My Profile
+              </button>
               <button className="hover:text-slate-900 transition-colors cursor-pointer">Materials</button>
               <button className="hover:text-slate-900 transition-colors cursor-pointer">Journal</button>
             </nav>
           </div>
 
           <div className="flex items-center gap-2 sm:gap-4 text-sm font-medium">
-            <div className="relative flex items-center">
+            <div ref={searchContainerRef} className="relative flex items-center" id="nav-search-wrapper">
               {isSearchOpen ? (
                 <div className="flex items-center">
                   <Search className="w-4 h-4 absolute left-3 text-slate-400" />
@@ -96,18 +172,87 @@ export function Navbar({ onNavigate, searchQuery, onSearchChange, activeView = '
                     type="text" 
                     placeholder="Search products..." 
                     value={searchQuery}
-                    onChange={(e) => onSearchChange(e.target.value)}
+                    onChange={(e) => {
+                      onSearchChange(e.target.value);
+                      setShowSuggestions(true);
+                    }}
+                    onFocus={() => setShowSuggestions(true)}
                     className="pl-9 pr-8 py-2 border border-slate-200 bg-white rounded-full text-sm outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900 w-36 sm:w-64 transition-all"
                   />
                   <button 
                     onClick={() => {
                        setIsSearchOpen(false);
                        onSearchChange('');
+                       setShowSuggestions(false);
                     }}
                     className="absolute right-3 text-slate-400 hover:text-slate-900"
                   >
                     <X className="w-4 h-4" />
                   </button>
+
+                  <AnimatePresence>
+                    {showSuggestions && searchQuery.trim().length > 0 && (
+                      <motion.div 
+                        initial={{ opacity: 0, y: 5, scale: 0.98 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: 5, scale: 0.98 }}
+                        transition={{ duration: 0.15 }}
+                        className="absolute top-full right-0 mt-3 bg-white border border-slate-150 shadow-2xl rounded-sm w-72 sm:w-80 md:w-96 overflow-hidden z-50 text-left flex flex-col"
+                        id="search-live-suggestions-dropdown"
+                      >
+                        <div className="px-3.5 py-2.5 bg-slate-50 border-b border-slate-100 flex justify-between items-center text-[10px] uppercase tracking-widest text-slate-400 font-bold font-sans">
+                          <span className="flex items-center gap-1.5"><Sparkles className="w-3.5 h-3.5 text-slate-400" /> Suggestions</span>
+                          <span className="font-mono text-[9px] font-semibold">{filteredSuggestions.length} products found</span>
+                        </div>
+                        
+                        {filteredSuggestions.length === 0 ? (
+                          <div className="px-4 py-8 text-center text-xs text-slate-400 italic font-sans" id="search-no-suggestions">
+                            No items match "{searchQuery}"
+                          </div>
+                        ) : (
+                          <div className="max-h-80 overflow-y-auto divide-y divide-slate-100" id="search-suggestions-container">
+                            {filteredSuggestions.map((prod) => (
+                              <button
+                                key={prod.id}
+                                onClick={() => {
+                                  onSearchChange(prod.name);
+                                  if (onSelectProduct) {
+                                    onSelectProduct(prod);
+                                  }
+                                  setShowSuggestions(false);
+                                }}
+                                className="w-full text-left p-3.5 hover:bg-slate-50/90 transition-all flex gap-3.5 items-start group cursor-pointer border-none outline-none select-none"
+                              >
+                                <div className="w-10 h-12.5 bg-slate-100 border border-slate-200/60 overflow-hidden flex-shrink-0 rounded-xs">
+                                  <img 
+                                    src={prod.image} 
+                                    alt={prod.name} 
+                                    className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                                    referrerPolicy="no-referrer"
+                                  />
+                                </div>
+                                <div className="flex-1 min-w-0 flex flex-col justify-between h-11">
+                                  <div>
+                                    <h4 className="text-[11.5px] font-bold text-slate-900 group-hover:text-slate-950 transition-colors truncate uppercase tracking-tight">
+                                      {highlightMatch(prod.name, searchQuery)}
+                                    </h4>
+                                    {prod.category && (
+                                      <span className="text-[8px] font-mono font-bold uppercase tracking-wider text-slate-400 leading-none block mt-1">
+                                        {prod.category}
+                                      </span>
+                                    )}
+                                  </div>
+                                  <span className="text-[10px] font-mono font-bold text-slate-900 leading-none">
+                                    {formatPrice(prod.price)}
+                                  </span>
+                                </div>
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
               ) : (
                 <button 
@@ -119,8 +264,36 @@ export function Navbar({ onNavigate, searchQuery, onSearchChange, activeView = '
               )}
             </div>
 
-            <button onClick={() => setIsTrackOpen(true)} className="hidden sm:inline-block hover:opacity-70 transition-opacity font-medium cursor-pointer">Track Order</button>
+            <button 
+              onClick={() => onNavigate('track')} 
+              className={`hidden sm:inline-block hover:opacity-70 transition-opacity font-medium cursor-pointer ${
+                activeView === 'track' ? 'text-slate-900 font-bold' : ''
+              }`}
+            >
+              Track Order
+            </button>
             
+            {/* Elegant Currency Switcher */}
+            <div className="relative inline-flex items-center min-w-[55px] cursor-pointer" id="nav-currency-container">
+              <select
+                value={currency}
+                onChange={(e) => setCurrency(e.target.value as CurrencyType)}
+                className="bg-transparent text-slate-800 hover:text-slate-950 font-mono text-xs font-bold uppercase py-1 border-none outline-none focus:outline-none focus:ring-0 cursor-pointer appearance-none pr-3.5 select-none"
+                style={{
+                  backgroundImage: `url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23475569' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e")`,
+                  backgroundSize: '8.5px',
+                  backgroundPosition: 'right center',
+                  backgroundRepeat: 'no-repeat',
+                }}
+                aria-label="Switch Currency"
+                id="currency-switcher-select"
+              >
+                <option value="USD" className="bg-white text-slate-900 font-mono">USD</option>
+                <option value="EUR" className="bg-white text-slate-900 font-mono">EUR</option>
+                <option value="GBP" className="bg-white text-slate-900 font-mono">GBP</option>
+              </select>
+            </div>
+
             <button 
               onClick={() => onNavigate('saved')}
               className={`px-3 py-2 rounded-full border text-xs sm:text-sm font-medium transition-all flex items-center gap-1.5 cursor-pointer hover:bg-slate-50 ${
@@ -133,6 +306,20 @@ export function Navbar({ onNavigate, searchQuery, onSearchChange, activeView = '
             >
               <Heart className={`w-4 h-4 ${totalSaved > 0 ? 'fill-rose-500 text-rose-500' : 'text-slate-400'}`} />
               <span className="hidden min-[450px]:inline">Saved ({totalSaved})</span>
+            </button>
+
+            <button 
+              onClick={() => onNavigate('profile')}
+              className={`px-3 py-2 rounded-full border text-xs sm:text-sm font-medium transition-all flex items-center gap-1.5 cursor-pointer hover:bg-slate-50 ${
+                activeView === 'profile'
+                  ? 'bg-slate-50 border-slate-300 text-slate-950 font-semibold'
+                  : 'border-slate-200 text-slate-600 hover:border-slate-350'
+              }`}
+              title="My Account Profile"
+              id="nav-profile-button"
+            >
+              <User className={`w-4 h-4 text-slate-400 ${activeView === 'profile' ? 'text-slate-950' : ''}`} />
+              <span className="hidden min-[450px]:inline">Profile</span>
             </button>
 
             <button 
@@ -279,7 +466,7 @@ export function Navbar({ onNavigate, searchQuery, onSearchChange, activeView = '
                       )}
                       <div className="flex justify-between items-center border-t border-slate-100 pt-3 mt-1 text-slate-950 font-medium font-mono">
                         <span className="font-bold uppercase tracking-widest text-[9px] text-slate-400 font-sans">Total Charged</span>
-                        <span className="font-mono text-sm font-bold">${(typeof trackOrderResult.total === 'number' ? trackOrderResult.total : parseFloat(trackOrderResult.total) || 0).toFixed(2)}</span>
+                        <span className="font-mono text-sm font-bold">{formatPrice(typeof trackOrderResult.total === 'number' ? trackOrderResult.total : parseFloat(trackOrderResult.total) || 0)}</span>
                       </div>
                     </div>
                   </div>
